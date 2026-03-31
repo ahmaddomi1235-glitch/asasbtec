@@ -2,4 +2,5 @@
 
 interface Window {
   __removeLoader?: () => void;
+  __cancelLoadTimer?: () => void;
 }

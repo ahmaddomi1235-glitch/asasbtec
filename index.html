@@ -7,6 +7,7 @@
     <meta name="description" content="منصة أساس التعليمية - حاسبة معدل BTEC الاحترافية" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <title>أساس مهني | حاسبة معدل BTEC</title>
+    <!-- Google Fonts with onerror fallback -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -15,55 +16,183 @@
       onerror="this.remove()"
     />
     <style>
-      /* Inline loading screen — shows before JS loads */
-      body { margin: 0; background: #EEF3F7; }
+      /* ── System font fallback if Cairo fails to load ── */
+      body {
+        margin: 0;
+        background: #EEF3F7;
+        font-family: 'Cairo', 'Segoe UI', Tahoma, Arial, sans-serif;
+      }
+
+      /* ── Full-screen loader shown before JS mounts ── */
       #app-loader {
         position: fixed;
         top: 0; right: 0; bottom: 0; left: 0;
+        display: -webkit-flex;
         display: flex;
+        -webkit-flex-direction: column;
         flex-direction: column;
+        -webkit-align-items: center;
         align-items: center;
+        -webkit-justify-content: center;
         justify-content: center;
         background: #EEF3F7;
-        font-family: 'Cairo', 'Segoe UI', Arial, sans-serif;
+        font-family: 'Cairo', 'Segoe UI', Tahoma, Arial, sans-serif;
         direction: rtl;
+        text-align: center;
         z-index: 9999;
+        padding: 24px;
+        -webkit-box-sizing: border-box;
+        box-sizing: border-box;
       }
+
       #app-loader .loader-circle {
         width: 48px;
         height: 48px;
-        border: 4px solid rgba(47,86,115,0.15);
+        border: 4px solid rgba(47, 86, 115, 0.18);
         border-top-color: #2F5673;
         border-radius: 50%;
-        animation: spin 0.9s linear infinite;
+        -webkit-animation: appSpin 0.9s linear infinite;
+        animation: appSpin 0.9s linear infinite;
         margin-bottom: 16px;
+        -webkit-box-sizing: border-box;
+        box-sizing: border-box;
       }
-      #app-loader p {
+
+      #app-loader .loader-text {
         color: #4A6170;
         font-size: 15px;
+        margin: 0 0 8px 0;
+      }
+
+      #app-loader .loader-sub {
+        color: #7A95A6;
+        font-size: 12px;
         margin: 0;
       }
-      @keyframes spin {
-        to { transform: rotate(360deg); }
+
+      /* Error state shown after timeout */
+      #app-loader.load-error .loader-circle {
+        display: none;
+      }
+
+      #app-loader.load-error .loader-text {
+        font-size: 17px;
+        font-weight: 700;
+        color: #1A2D3E;
+        margin-bottom: 10px;
+      }
+
+      #app-loader .retry-btn {
+        margin-top: 18px;
+        background: #2F5673;
+        color: #fff;
+        border: none;
+        border-radius: 999px;
+        padding: 12px 28px;
+        font-size: 14px;
+        font-weight: 700;
+        font-family: inherit;
+        cursor: pointer;
+        display: none;
+      }
+
+      #app-loader.load-error .retry-btn {
+        display: inline-block;
+      }
+
+      @-webkit-keyframes appSpin {
+        to { -webkit-transform: rotate(360deg); transform: rotate(360deg); }
+      }
+      @keyframes appSpin {
+        to { -webkit-transform: rotate(360deg); transform: rotate(360deg); }
       }
     </style>
   </head>
   <body>
-    <!-- Loading indicator shown before React mounts -->
+
+    <!-- No-JS fallback -->
+    <noscript>
+      <div style="position:fixed;top:0;right:0;bottom:0;left:0;background:#EEF3F7;display:flex;align-items:center;justify-content:center;direction:rtl;text-align:center;padding:24px;font-family:Arial,sans-serif;z-index:99999;">
+        <div style="background:#fff;border-radius:16px;padding:32px 24px;max-width:360px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,0.1);">
+          <div style="font-size:48px;margin-bottom:16px;">⚠️</div>
+          <h2 style="font-size:18px;color:#1A2D3E;margin:0 0 12px;">JavaScript غير مفعّل</h2>
+          <p style="font-size:13px;color:#4A6170;margin:0;">
+            هذا التطبيق يحتاج إلى JavaScript ليعمل.<br/>
+            يرجى تفعيل JavaScript في إعدادات متصفحك وإعادة تحميل الصفحة.
+          </p>
+        </div>
+      </div>
+    </noscript>
+
+    <!-- Loading indicator — visible before React mounts -->
     <div id="app-loader">
       <div class="loader-circle"></div>
-      <p>جارٍ التحميل...</p>
+      <p class="loader-text">جارٍ تحميل التطبيق...</p>
+      <p class="loader-sub">يرجى الانتظار</p>
+      <button class="retry-btn" onclick="window.location.reload()">إعادة المحاولة</button>
     </div>
 
     <div id="root"></div>
 
     <script>
-      // Remove loader once React mounts
+      // ── Helpers exposed to the app ──────────────────────────────
       window.__removeLoader = function() {
         var el = document.getElementById('app-loader');
-        if (el) el.parentNode.removeChild(el);
+        if (el && el.parentNode) {
+          el.parentNode.removeChild(el);
+        }
       };
+
+      // ── Timeout: if app hasn't mounted after 20s, show error ────
+      var __loadTimer = setTimeout(function() {
+        var root = document.getElementById('root');
+        var loader = document.getElementById('app-loader');
+        // Only show error if root is still empty (React never mounted)
+        if (loader && root && !root.firstChild) {
+          loader.className = 'load-error';
+          var text = loader.querySelector('.loader-text');
+          var sub  = loader.querySelector('.loader-sub');
+          if (text) text.textContent = 'تعذّر تحميل التطبيق';
+          if (sub)  sub.textContent  = 'تحقق من اتصالك بالإنترنت ثم أعد المحاولة';
+        }
+      }, 20000);
+
+      // If app loads successfully, cancel the error timer
+      window.__cancelLoadTimer = function() {
+        clearTimeout(__loadTimer);
+      };
+
+      // ── Global error handler (catches JS errors before React) ───
+      window.onerror = function(msg, src, line, col, err) {
+        var loader = document.getElementById('app-loader');
+        var root   = document.getElementById('root');
+        // Only take over if React hasn't mounted yet
+        if (loader && root && !root.firstChild) {
+          clearTimeout(__loadTimer);
+          loader.className = 'load-error';
+          var text = loader.querySelector('.loader-text');
+          var sub  = loader.querySelector('.loader-sub');
+          if (text) text.textContent = 'حدث خطأ أثناء تحميل التطبيق';
+          if (sub)  sub.textContent  = 'قد لا يدعم متصفحك هذا التطبيق. جرّب تحديث متصفحك.';
+        }
+      };
+
+      // ── Catch unhandled Promise rejections (network/fetch errors) ─
+      window.addEventListener('unhandledrejection', function(event) {
+        var loader = document.getElementById('app-loader');
+        var root   = document.getElementById('root');
+        if (loader && root && !root.firstChild) {
+          clearTimeout(__loadTimer);
+          loader.className = 'load-error';
+          var text = loader.querySelector('.loader-text');
+          var sub  = loader.querySelector('.loader-sub');
+          if (text) text.textContent = 'تعذّر تحميل التطبيق';
+          if (sub)  sub.textContent  = 'تحقق من اتصالك بالإنترنت ثم أعد المحاولة';
+        }
+      });
     </script>
+
+    <!-- Main app entry (injected by Vite) -->
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

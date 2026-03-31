@@ -6,21 +6,29 @@ interface Props {
 
 interface State {
   hasError: boolean;
-  errorMessage: string;
 }
 
 export default class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false, errorMessage: '' };
+    this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, errorMessage: error.message || 'خطأ غير معروف' };
+  static getDerivedStateFromError(_error: Error): State {
+    return { hasError: true };
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error('ErrorBoundary caught:', error, info);
+
+    // Remove the full-screen loader so our error UI is visible
+    if (typeof window.__removeLoader === 'function') {
+      window.__removeLoader();
+    }
+    // Cancel the load-failure timer
+    if (typeof window.__cancelLoadTimer === 'function') {
+      window.__cancelLoadTimer();
+    }
   }
 
   handleReload() {
@@ -41,9 +49,10 @@ export default class ErrorBoundary extends Component<Props, State> {
           justifyContent: 'center',
           padding: '24px',
           background: '#EEF3F7',
-          fontFamily: "'Cairo', 'Segoe UI', sans-serif",
+          fontFamily: "'Cairo', 'Segoe UI', Tahoma, Arial, sans-serif",
           direction: 'rtl',
           textAlign: 'center',
+          boxSizing: 'border-box',
         }}>
           <div style={{
             background: '#fff',
@@ -53,23 +62,24 @@ export default class ErrorBoundary extends Component<Props, State> {
             width: '100%',
             boxShadow: '0 4px 24px rgba(0,0,0,0.1)',
             border: '1px solid rgba(47,86,115,0.15)',
+            boxSizing: 'border-box',
           }}>
-            <div style={{ fontSize: '52px', marginBottom: '16px' }}>⚠️</div>
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚠️</div>
             <h2 style={{
-              fontSize: '20px',
+              fontSize: '18px',
               fontWeight: 800,
               color: '#1A2D3E',
-              marginBottom: '10px',
+              margin: '0 0 10px',
             }}>
               حدث خطأ في التطبيق
             </h2>
             <p style={{
-              fontSize: '14px',
+              fontSize: '13px',
               color: '#4A6170',
-              marginBottom: '24px',
+              margin: '0 0 24px',
               lineHeight: 1.7,
             }}>
-              نأسف على هذا الخطأ. سيتم مسح البيانات المؤقتة وإعادة تحميل الصفحة.
+              نأسف على ذلك. سيتم مسح البيانات المؤقتة وإعادة تحميل الصفحة.
             </p>
             <button
               onClick={() => this.handleReload()}
@@ -79,7 +89,7 @@ export default class ErrorBoundary extends Component<Props, State> {
                 border: 'none',
                 borderRadius: '999px',
                 padding: '12px 32px',
-                fontSize: '15px',
+                fontSize: '14px',
                 fontWeight: 700,
                 fontFamily: 'inherit',
                 cursor: 'pointer',
