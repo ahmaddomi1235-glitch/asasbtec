@@ -97,6 +97,13 @@ export default function App() {
   });
 
   useEffect(() => {
+    // Remove HTML loading screen once React has mounted
+    if (typeof window.__removeLoader === 'function') {
+      window.__removeLoader();
+    }
+  }, []);
+
+  useEffect(() => {
     document.documentElement.dataset.theme = theme;
     try { localStorage.setItem('asasmehani-theme', theme); } catch { /* ignore */ }
   }, [theme]);

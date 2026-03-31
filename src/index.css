@@ -176,7 +176,7 @@ body {
 body::before {
   content: '';
   position: fixed;
-  inset: 0;
+  top: 0; right: 0; bottom: 0; left: 0;
   background:
     radial-gradient(ellipse 80% 60% at 20% 20%, rgba(47,86,115,0.08) 0%, transparent 60%),
     radial-gradient(ellipse 60% 80% at 80% 80%, rgba(123,45,90,0.06) 0%, transparent 60%),
@@ -237,7 +237,7 @@ body::before {
 /* ── Splash Screen ───────────────────────────────────────────── */
 .splash {
   position: fixed;
-  inset: 0;
+  top: 0; right: 0; bottom: 0; left: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -250,19 +250,28 @@ body::before {
 .splash::before {
   content: '';
   position: absolute;
-  inset: -50%;
-  background: conic-gradient(
-    from 0deg at 50% 50%,
-    transparent 0deg,
-    var(--gold-dim) 60deg,
-    transparent 120deg,
-    var(--accent2-dim) 180deg,
-    transparent 240deg,
-    var(--gold-dim) 300deg,
-    transparent 360deg
-  );
+  top: -50%; right: -50%; bottom: -50%; left: -50%;
+  /* Fallback for browsers without conic-gradient support */
+  background: radial-gradient(ellipse at center, var(--gold-dim) 0%, transparent 70%);
+  /* Override with conic-gradient where supported */
+  background: radial-gradient(ellipse at center, var(--gold-dim) 0%, transparent 70%);
   animation: rotateBg 30s linear infinite;
   z-index: 0;
+}
+
+@supports (background: conic-gradient(red, blue)) {
+  .splash::before {
+    background: conic-gradient(
+      from 0deg at 50% 50%,
+      transparent 0deg,
+      var(--gold-dim) 60deg,
+      transparent 120deg,
+      var(--accent2-dim) 180deg,
+      transparent 240deg,
+      var(--gold-dim) 300deg,
+      transparent 360deg
+    );
+  }
 }
 
 @keyframes rotateBg { to { transform: rotate(360deg); } }
@@ -295,7 +304,7 @@ body::before {
 
 .splash-logo-ring {
   position: absolute;
-  inset: -12px;
+  top: -12px; right: -12px; bottom: -12px; left: -12px;
   border-radius: 50%;
   border: 2px solid var(--gold-border);
   animation: ringPulse 3s ease-in-out infinite;
