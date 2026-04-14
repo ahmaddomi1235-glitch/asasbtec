@@ -110,6 +110,64 @@ export function reportDiagnostic(label: string, data?: Record<string, unknown>):
   }
 }
 
+// ── Network error classifier ────────────────────────────────────────────────
+
+export type NetworkErrorType =
+  | 'dns-failure'        // ENOTFOUND / ERR_NAME_NOT_RESOLVED
+  | 'connection-refused' // ECONNREFUSED / ERR_CONNECTION_REFUSED
+  | 'timeout'            // Request timed out
+  | 'cors'               // CORS policy error
+  | 'http-error'         // 4xx / 5xx response
+  | 'blocked'            // Likely blocked by ISP/firewall (no response at all)
+  | 'unknown-network';   // Unclassified network error
+
+export function classifyNetworkError(error: unknown): NetworkErrorType {
+  const msg = (error instanceof Error ? error.message : String(error)).toLowerCase();
+
+  if (msg.includes('name_not_resolved') || msg.includes('enotfound') || msg.includes('dns')) {
+    return 'dns-failure';
+  }
+  if (msg.includes('connection_refused') || msg.includes('econnrefused')) {
+    return 'connection-refused';
+  }
+  if (msg.includes('timeout') || msg.includes('timed out') || msg.includes('etimedout')) {
+    return 'timeout';
+  }
+  if (msg.includes('cors') || msg.includes('cross-origin') || msg.includes('access-control')) {
+    return 'cors';
+  }
+  if (msg.includes('failed to fetch') || msg.includes('networkerror') || msg.includes('load failed')) {
+    // "Failed to fetch" in Chrome / "Load failed" in Safari — typically ISP block or no internet
+    return 'blocked';
+  }
+  return 'unknown-network';
+}
+
+/**
+ * Wrapper around fetch that reports failures with network error classification.
+ * Use this for any critical fetch that should be tracked.
+ */
+export async function trackedFetch(
+  url: string,
+  options?: RequestInit,
+): Promise<Response> {
+  try {
+    const resp = await fetch(url, options);
+    if (!resp.ok) {
+      reportClientError(
+        new Error(`HTTP ${resp.status} ${resp.statusText}`),
+        'http-error',
+        { url, status: resp.status },
+      );
+    }
+    return resp;
+  } catch (err) {
+    const networkType = classifyNetworkError(err);
+    reportClientError(err, `network:${networkType}`, { url, networkType });
+    throw err;
+  }
+}
+
 // ── Startup health checks ───────────────────────────────────────────────────
 
 export interface HealthCheckResult {

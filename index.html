@@ -7,14 +7,33 @@
     <meta name="description" content="منصة أساس التعليمية - حاسبة معدل BTEC الاحترافية" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <title>أساس مهني | حاسبة معدل BTEC</title>
-    <!-- Google Fonts with onerror fallback -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!--
+      Google Fonts — loaded NON-BLOCKING.
+      Strategy: media="print" + onload swap trick.
+      This means the font is fetched in the background; the page renders
+      immediately using the system font fallback, then switches to Cairo
+      once it arrives. If fonts.googleapis.com is blocked or unreachable
+      (common on certain ISPs/networks), the page still loads instantly.
+
+      We use dns-prefetch instead of preconnect: preconnect opens a real
+      TCP+TLS connection and can hang for 20-30 s on networks that drop
+      packets silently to Google servers, delaying page paint.
+    -->
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
     <link
+      rel="preload"
       href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap"
-      rel="stylesheet"
+      as="style"
+      onload="this.onload=null;this.rel='stylesheet'"
       onerror="this.remove()"
     />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
     <style>
       /* ── System font fallback if Cairo fails to load ── */
       body {

@@ -1,13 +1,13 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
+import DiagPage from './components/DiagPage.tsx'
 import ErrorBoundary from './components/ErrorBoundary.tsx'
 import { reportClientError, runStartupHealthChecks } from './utils/errorReporting.ts'
 import './index.css'
 
 // ── Global error listeners ────────────────────────────────────────────────────
-// These must be registered BEFORE React mounts so we catch any startup failures
-// that occur before the ErrorBoundary is active.
+// Registered BEFORE React mounts to catch startup failures before ErrorBoundary.
 
 window.addEventListener('error', (event: ErrorEvent) => {
   reportClientError(event.error ?? event.message, 'window.onerror', {
@@ -21,15 +21,47 @@ window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => 
   reportClientError(event.reason, 'unhandledrejection');
 });
 
+// ── Network failure classifier ────────────────────────────────────────────────
+// Listens for resource load failures (script/link/img) and classifies them.
+
+document.addEventListener('error', (event) => {
+  const target = event.target as HTMLElement | null;
+  if (!target || !('src' in target || 'href' in target)) return;
+
+  const url = ('src' in target ? (target as HTMLScriptElement).src : (target as HTMLLinkElement).href) || 'unknown';
+  const tag = target.tagName?.toLowerCase() ?? 'unknown';
+
+  // Classify failure type
+  let category = 'resource-load-failure';
+  if (url.includes('googleapis.com') || url.includes('gstatic.com')) {
+    category = 'google-fonts-blocked';
+  } else if (url.includes('vercel.app') || url.includes(window.location.hostname)) {
+    category = 'same-origin-asset-failure';
+  }
+
+  reportClientError(
+    new Error(`Resource failed to load: ${url}`),
+    category,
+    { tag, url },
+  );
+}, true /* capture phase — required for resource errors */);
+
 // ── Startup health checks ────────────────────────────────────────────────────
 
 runStartupHealthChecks();
 
-// ── Cancel the HTML-level load-failure timer — JS has executed successfully ──
+// ── Cancel the HTML-level load-failure timer — JS executed successfully ───────
 
 if (typeof window.__cancelLoadTimer === 'function') {
   window.__cancelLoadTimer();
 }
+
+// ── Route detection — render /diag without React Router ──────────────────────
+// The SPA rewrite forwards /diag → index.html; we detect it here and render
+// DiagPage instead of App. No React Router dependency needed.
+
+const isDiagRoute = window.location.pathname === '/diag' ||
+                    window.location.pathname === '/diag/';
 
 // ── Mount React ──────────────────────────────────────────────────────────────
 
@@ -39,12 +71,11 @@ if (rootEl) {
   ReactDOM.createRoot(rootEl).render(
     <React.StrictMode>
       <ErrorBoundary>
-        <App />
+        {isDiagRoute ? <DiagPage /> : <App />}
       </ErrorBoundary>
     </React.StrictMode>,
   );
 } else {
-  // Root element missing — report and show a visible error instead of blank page
   reportClientError(new Error('#root element not found'), 'mount');
   document.body.innerHTML = `
     <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;
