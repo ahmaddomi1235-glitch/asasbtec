@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Diagnostic page — allow indexing so users can find it if needed
+Allow: /diag
+
+# Sitemap (add when custom domain is live)
+# Sitemap: https://www.YOUR_DOMAIN.com/sitemap.xml

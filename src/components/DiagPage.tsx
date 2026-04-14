@@ -1,13 +1,13 @@
 /**
  * DiagPage — Network & Environment Diagnostic Screen
  *
- * Accessible at: https://asasbtec.vercel.app/diag
- * (The SPA rewrite forwards /diag → index.html → React detects the path
- * and renders this component instead of the normal app.)
+ * Accessible at: <origin>/diag  (works on any domain — custom or vercel.app)
+ * The SPA rewrite forwards /diag → index.html → React detects the path
+ * and renders this component instead of the normal app.
  *
  * Designed to help identify WHY the app fails on a specific network:
- *  - DNS/network block of *.vercel.app
- *  - Google Fonts blocking (render-blocking stylesheet)
+ *  - DNS/network block (ISP filtering of the deployment domain)
+ *  - Google Fonts blocking (was render-blocking before fix)
  *  - Asset loading failures
  *  - localStorage unavailability (Private Browsing quirks)
  *  - Same-origin API reachability
@@ -120,7 +120,7 @@ export default function DiagPage() {
       push({
         label: '/api/health (نفس الخادم)',
         status: 'fail',
-        detail: `فشل الاتصال: ${e instanceof Error ? e.message : String(e)} — محتمل حجب الشبكة لـ vercel.app`,
+        detail: `فشل الاتصال: ${e instanceof Error ? e.message : String(e)} — محتمل حجب الشبكة لهذا الدومين من مزود الإنترنت`,
       });
     }
 
@@ -408,11 +408,18 @@ export default function DiagPage() {
           </a>
         </div>
 
-        {/* Footer note */}
+        {/* Footer note — uses window.location.origin so it works on any domain */}
         <p style={{ fontSize: 11, color: '#7A95A6', textAlign: 'center', marginTop: 16, lineHeight: 1.6 }}>
           أرسل رابط هذه الصفحة للطالب الذي يعاني من مشكلة:<br />
-          <span style={{ direction: 'ltr', display: 'inline-block' }}>
-            https://asasbtec.vercel.app/diag
+          <span
+            style={{ direction: 'ltr', display: 'inline-block', cursor: 'pointer', textDecoration: 'underline' }}
+            onClick={() => {
+              const url = `${window.location.origin}/diag`;
+              navigator.clipboard?.writeText(url).catch(() => {});
+            }}
+            title="انقر للنسخ"
+          >
+            {typeof window !== 'undefined' ? `${window.location.origin}/diag` : '/diag'}
           </span>
         </p>
 

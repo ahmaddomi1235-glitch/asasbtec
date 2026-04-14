@@ -2,23 +2,32 @@
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ],
+
+  "redirects": [
+    {
+      "source": "https://www.:domain/(.*)",
+      "destination": "https://:domain/$1",
+      "permanent": true,
+      "has": [{ "type": "host", "value": "www\\.(?<domain>.+)" }]
+    }
+  ],
+
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "SAMEORIGIN" }
+        { "key": "X-Content-Type-Options",  "value": "nosniff" },
+        { "key": "X-Frame-Options",         "value": "SAMEORIGIN" },
+        { "key": "Referrer-Policy",         "value": "strict-origin-when-cross-origin" },
+        { "key": "Permissions-Policy",      "value": "camera=(), microphone=(), geolocation=()" }
       ]
     },
     {
       "source": "/index.html",
       "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-cache, no-store, must-revalidate"
-        },
-        { "key": "Pragma", "value": "no-cache" },
-        { "key": "Expires", "value": "0" }
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+        { "key": "Pragma",        "value": "no-cache" },
+        { "key": "Expires",       "value": "0" }
       ]
     },
     {
@@ -31,6 +40,25 @@
       "source": "/logo.png",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=86400" }
+      ]
+    },
+    {
+      "source": "/manifest.json",
+      "headers": [
+        { "key": "Cache-Control",  "value": "public, max-age=86400" },
+        { "key": "Content-Type",   "value": "application/manifest+json; charset=utf-8" }
+      ]
+    },
+    {
+      "source": "/robots.txt",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=86400" }
+      ]
+    },
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store" }
       ]
     }
   ]

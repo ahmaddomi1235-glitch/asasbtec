@@ -1,8 +1,14 @@
 node_modules/
 dist/
-.env
+
+# .env  ← removed from gitignore: the main .env file contains only
+#          public fallback values (VITE_SITE_URL, VITE_BASE_PATH) and
+#          IS meant to be committed. Secrets never go in .env — they go
+#          in Vercel Dashboard → Settings → Environment Variables.
 .env.local
 .env.*.local
 *.log
 .DS_Store
 Thumbs.db
+
+.vercel

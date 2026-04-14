@@ -1,0 +1,20 @@
+{
+  "name": "منصة أساس التعليمية",
+  "short_name": "أساس مهني",
+  "description": "حاسبة معدل BTEC الاحترافية للأول ثانوي والتوجيهي",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#EEF3F7",
+  "theme_color": "#2F5673",
+  "lang": "ar",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
