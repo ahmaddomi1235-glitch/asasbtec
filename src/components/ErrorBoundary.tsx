@@ -1,4 +1,5 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
+import { reportClientError } from '../utils/errorReporting';
 
 interface Props {
   children: ReactNode;
@@ -6,20 +7,26 @@ interface Props {
 
 interface State {
   hasError: boolean;
+  errorMessage: string;
 }
 
 export default class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { hasError: false, errorMessage: '' };
   }
 
-  static getDerivedStateFromError(_error: Error): State {
-    return { hasError: true };
+  static getDerivedStateFromError(error: Error): State {
+    return {
+      hasError: true,
+      errorMessage: error?.message ?? 'خطأ غير معروف',
+    };
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error('ErrorBoundary caught:', error, info);
+    reportClientError(error, 'ErrorBoundary', {
+      componentStack: info.componentStack ?? undefined,
+    });
 
     // Remove the full-screen loader so our error UI is visible
     if (typeof window.__removeLoader === 'function') {
@@ -34,7 +41,7 @@ export default class ErrorBoundary extends Component<Props, State> {
   handleReload() {
     try {
       window.localStorage.clear();
-    } catch (_) { /* ignore */ }
+    } catch { /* ignore */ }
     window.location.reload();
   }
 
@@ -58,7 +65,7 @@ export default class ErrorBoundary extends Component<Props, State> {
             background: '#fff',
             borderRadius: '16px',
             padding: '32px 24px',
-            maxWidth: '380px',
+            maxWidth: '400px',
             width: '100%',
             boxShadow: '0 4px 24px rgba(0,0,0,0.1)',
             border: '1px solid rgba(47,86,115,0.15)',
@@ -76,11 +83,39 @@ export default class ErrorBoundary extends Component<Props, State> {
             <p style={{
               fontSize: '13px',
               color: '#4A6170',
-              margin: '0 0 24px',
+              margin: '0 0 8px',
               lineHeight: 1.7,
             }}>
-              نأسف على ذلك. سيتم مسح البيانات المؤقتة وإعادة تحميل الصفحة.
+              نأسف على ذلك. يمكنك تحديث الصفحة أو فتحها في نافذة خاصة.
             </p>
+            <p style={{
+              fontSize: '12px',
+              color: '#7A95A6',
+              margin: '0 0 24px',
+              lineHeight: 1.6,
+            }}>
+              سيتم مسح البيانات المؤقتة تلقائيًا عند إعادة التحميل.
+            </p>
+
+            {/* Error detail — visible to user so they can share it */}
+            {this.state.errorMessage && (
+              <div style={{
+                background: '#f5f7f9',
+                border: '1px solid rgba(47,86,115,0.12)',
+                borderRadius: '8px',
+                padding: '10px 14px',
+                marginBottom: '20px',
+                textAlign: 'left',
+                direction: 'ltr',
+                fontSize: '11px',
+                color: '#4A6170',
+                wordBreak: 'break-word',
+                fontFamily: 'monospace',
+              }}>
+                {this.state.errorMessage}
+              </div>
+            )}
+
             <button
               onClick={() => this.handleReload()}
               style={{
@@ -94,10 +129,15 @@ export default class ErrorBoundary extends Component<Props, State> {
                 fontFamily: 'inherit',
                 cursor: 'pointer',
                 width: '100%',
+                marginBottom: '12px',
               }}
             >
               إعادة تحميل التطبيق
             </button>
+
+            <p style={{ fontSize: '11px', color: '#7A95A6', margin: 0 }}>
+              إذا استمرت المشكلة، جرّب فتح الصفحة في نافذة خاصة (Incognito).
+            </p>
           </div>
         </div>
       );

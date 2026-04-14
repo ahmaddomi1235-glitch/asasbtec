@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   FinalResults, FullCalcResults as FullCalcResultsType,
   Grade, SharedGrades, SavedState, Subject, TawjihiCalcMode,
@@ -132,12 +132,27 @@ export default function App() {
   } = savedState;
 
   const selectedStage = curriculum.find(s => s.id === selectedStageId) ?? null;
-  const firstStage    = curriculum.find(s => s.id === 'first')!;
-  const tawjihiStage  = curriculum.find(s => s.id === 'tawjihi')!;
+  // useMemo prevents re-creating these on every render; the fallback (empty
+  // specializations array) avoids a non-null-assertion crash if curriculum
+  // data is ever malformed.
+  const firstStage   = useMemo(
+    () => curriculum.find(s => s.id === 'first')   ?? { id: 'first',   name: '', icon: '', description: '', specializations: [] },
+    [],
+  );
+  const tawjihiStage = useMemo(
+    () => curriculum.find(s => s.id === 'tawjihi') ?? { id: 'tawjihi', name: '', icon: '', description: '', specializations: [] },
+    [],
+  );
 
   // ── Splash ────────────────────────────────────────────────────────────────
-
-  function handleSplashDone() { setShowSplash(false); }
+  // IMPORTANT: must be memoized with useCallback.
+  // SplashScreen has [onDone] as a useEffect dependency. Without useCallback,
+  // every App re-render produces a new function reference, which causes
+  // SplashScreen's effect to re-run and reset the progress interval from zero.
+  // On devices that trigger multiple renders during initialization (slow JS,
+  // React StrictMode double-invocation, storage reads), this causes the splash
+  // screen to loop and never finish.
+  const handleSplashDone = useCallback(() => { setShowSplash(false); }, []);
 
   // ── Stage selection ───────────────────────────────────────────────────────
 
