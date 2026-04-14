@@ -5,10 +5,10 @@
 
   "redirects": [
     {
-      "source": "https://www.:domain/(.*)",
+      "source":      "/(.*)",
+      "has":         [{ "type": "host", "value": "www\\.(?<domain>.+)" }],
       "destination": "https://:domain/$1",
-      "permanent": true,
-      "has": [{ "type": "host", "value": "www\\.(?<domain>.+)" }]
+      "permanent":   true
     }
   ],
 
